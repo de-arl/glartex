@@ -6,11 +6,11 @@ The script is made to edit existing tex files that have been compiled as pdf at 
 
 Usage:
 
-cd to working directory
+run the script with the name of the tex file appended, but without suffix, for example to edit TEXFILE.tex
 
-run the script with the name of the tex file appended, for example to edit file.tex
+$ cd path/to/working/directory
 
-glartex file
+$ glartex TEXFILE
 
 
 If you use sway you can use glartex_sway, it uses glartex_sway_plugin to reorder containers at startup. 
