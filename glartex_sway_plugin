@@ -1,0 +1,9 @@
+#!/bin/bash
+# For the plugin behaviour it is important to which side the open new window marker is set. Edit to you liking, see man jq, man swaymsg and man sway (5)
+export ID_GEDIT=$(swaymsg -t get_tree | jq '.. | (.nodes? // empty)[] | select( .app_id == "gedit")|.id')
+export ID_EVINCE=$(swaymsg -t get_tree | jq '.. | (.nodes? // empty)[] | select( .app_id == "evince")|.id')
+swaymsg [con_id=${ID_GEDIT}] move up 
+swaymsg [con_id=${ID_EVINCE}] move right 
+swaymsg [con_id=${ID_EVINCE}] move right 
+swaymsg [con_id=${ID_EVINCE}] move left 
+exit 0
