@@ -5,7 +5,9 @@ The script is made to edit existing tex files that have been compiled as pdf at 
 
 Usage:
 cd to working directory
+
 run the script with the name of the tex file appended, for example to edit file.tex
+
 glartex file
 
 If you use sway you can use glartex_sway, it uses glartex_sway_plugin to reorder containers at startup. 
