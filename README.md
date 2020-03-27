@@ -12,9 +12,13 @@ Glartex supports latex, bibtex, synctex and it has built-in functions to invoke 
 INSTALLATION:
 
 Install entr (eradman.com/entrproject/)
+
 If you want to use the translate option install the translate shell (soimort.org/translate/shell/)
+
 Copy glartex_v0.3/glartex to ~/.config/glartex
+
 Put the glartex-executable somewhere in your PATH and make it executable
+
 Edit the config file to your liking
 
 
