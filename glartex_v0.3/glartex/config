@@ -1,0 +1,16 @@
+#!/bin/bash
+## Set defaults
+export EDITOR="gedit"
+export EDITOR_COMMAND="gedit" 	# Use e.g. "$TERM -e vim" for editors that run in terminal
+export VIEWER="evince"
+export BIBTEX="false"
+export SYNCTEX="true"
+export SWAY="false"
+
+## Glartex supports the use of templates
+export TEMPLATE_DIRECTORY="${HOME}/.config/glartex/templates/"
+export DEFAULT_TEMPLATE="${HOME}/.config/glartex/templates/basic.tex"
+
+## If you have translation shell installed you can use the translate option
+export TRANSLATE="false"
+export TARGET_LANGUAGE="ENG"

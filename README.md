@@ -1,22 +1,74 @@
-# glartex
-script to edit latex with gedit and evince, synctex support, native wayland support
+=== GLARTEX VERSION 0.3 ===
 
-The script is made to edit existing tex files that have been compiled as pdf at least once. You need a .tex file and a corresponding pdf in you working directory. It depends on entr (http://eradman.com/entrproject/), tex, gedit and evince. Surely you can use any editor-viewer combination but the chosen one supports wayland and both-way synctex search.
+Glartex is a commandline utility to edit latex-Documents with your favorite editor and your favorite pdf-viewer.
+ 
+This enables latex editing with the programms you are most productive with, or editing latex in pure wayland sessions.
 
-Make the script executable with chmod +x and put it somewhere in your PATH or copy the script to your working directory and execute it with ./glartex
+Glartex will open all the programms you need for your latex-session and it will watch the tex-file you edit: Everytime the file is changed, it will be compiled.
 
-Usage:
-
-run the script with the name of the tex file appended, but without suffix, for example to edit TEXFILE.tex
-
-$ cd path/to/working/directory
-
-$ glartex TEXFILE
+Glartex supports latex, bibtex, synctex and it has built-in functions to invoke a translation shell or move windows to your preffered workspaces if you use sway.
 
 
-If you use sway you can use glartex_sway, it uses glartex_sway_plugin to reorder containers at startup. 
+INSTALLATION:
+
+Install entr (eradman.com/entrproject/)
+If you want to use the translate option install the translate shell (soimort.org/translate/shell/)
+Copy glartex_v0.3/glartex to ~/.config/glartex
+Put the glartex-executable somewhere in your PATH and make it executable
+Edit the config file to your liking
 
 
+USAGE:
+
+glartex [-e editor] [-v viewer] [-b 0/1] [-s 0/1] [-o 0/1] [-x] [-t TL] <-f/-c/-C FILE>
+
+	-e editor	Set editor
+	-v viewer	Set viewer
+	-b 0/1	Set bibtex false/true
+	-s 0/1	Set synctex false/true
+	-o 0/1	Set swaymode false/true
+	-x	Same as -b 1 -s 1 -o 1
+	-t TL	Include translate shell with target language TL
+	-n NAME	Rename output
+	-N NAME	Rename output and redirect to ./NAME_yy-mm-dd
+
+	---Options override defaults from configfile---
+
+	-f FILE	Edit any file
+	-c FILE	Edit copy of file in working directory
+	-C FILE	Edit copy of file in new directory ./FILE_yy-mm-dd
+
+	-h 	Help
 
 
+glartex -T TEMPLATE
 
+	Edit template in working directory
+
+	To edit template in new directory use $glartex -C path/to/template
+
+
+glartex FILENAME
+
+	If file exists:
+	Same as -f FILENAME
+
+	If file doesn't exist:
+	Edit a copy of DEFAULT_TEMPLATE named FILENAME in new directory ./FILENAME_yy-mm-dd
+
+
+IMPORTANT:
+
+	Glartex sources ~/.config/glartex/config
+	Templates are in ~/.config/glartex/templates
+	Synctex works best with gedit and evince
+	Depends on entr github.com/clibs/entr
+	Translate option depends on translate shell github.com/soimort/translate-shell
+
+	To change -o behaviour edit function swayorder
+
+AUTHOR:
+
+	de-arl, suspu@protonmail.com
+
+München 27.02.2020

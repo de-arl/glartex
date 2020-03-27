@@ -1,6 +1,291 @@
 #!/bin/bash
-pdflatex --synctex=1 --halt-on-error $1.tex 
-exec gedit -s $1.tex &
-echo $1.tex | entr -a -p -r pdflatex -halt-on-error --synctex=1 $1.tex & 
-exec evince $1.pdf &
+
+
+####  ab hier
+VERSION=0.3
+DATE=$(date +"%y-%m-%d")
+export SHELL=/bin/bash
+source ~/.config/glartex/config
+
+usage(){
+	echo -e "\v\t=== GLARTEX VERSION ${VERSION} ===\v\nUSAGE:\v\nglartex [options] <-f/-c/-C FILE>\v\n\t-e editor\tSet editor\n\t-v viewer\tSet viewer\n\t-b 0/1\tSet bibtex false/true\n\t-s 0/1\tSet synctex false/true\n\t-o 0/1\tSet swaymode false/true\n\t-x\tSame as -b 1 -s 1 -o 1\n\t-t TL\tInclude translate shell with target language TL\n\t-n NAME\tRename output\n\t-N NAME\tRename output and redirect to ./NAME_yy-mm-dd\v\n\t---Options override defaults from configfile---\v\n\t-f FILE\tEdit any file\n\t-c FILE\tEdit copy of file in working directory\n\t-C FILE\tEdit copy of file in new directory ./FILE_yy-mm-dd\v\n\t-h\tHelp\v\v\nglartex -T TEMPLATE\v\n\tEdit template in working directory\n\v\tTo edit template in new directory use \$glartex -C path/to/template\v\v\nglartex FILENAME\v\n\tIf file exists:\n\tSame as -f FILENAME\n\v\tIf file doesn't exist:\n\tEdit a copy of DEFAULT_TEMPLATE named FILENAME in new directory ./FILENAME_yy-mm-dd\v\v\nIMPORTANT:\n\v\tGlartex sources ~/.config/glartex/config\n\tTemplates are in ~/.config/glartex/templates\n\tSynctex works best with gedit and evince\n\tDepends on entr github.com/clibs/entr\n\tTranslate option depends on translate shell github.com/soimort/translate-shell\v\n\tTo change -o behaviour edit function swayorder\v\v\nAUTHOR:\v\n\tde-arl, suspu@protonmail.com\v"
+	1>&2 
+	exit 1
+}
+
+
+startedit(){
+	pdflatex --synctex=1 --halt-on-error ${FILE}.tex 
+	exec ${EDITOR_COMMAND} ${SYNC_GEDIT} ${FILE}.tex &
+	exec ${VIEWER} ${FILE}.pdf &
+}
+
+
+glartex_nobib(){
+	echo ${FILE}.tex | entr -a -p -r pdflatex ${SYNC_PDFLATEX} --halt-on-error ${FILE}.tex &
+}
+
+
+glartex_bib(){
+	echo ${FILE}.tex | entr -a -p -r bibcompile ${SYNC_BIBCOMPILE} -f ${FILE}  &
+}
+
+# This function may easily be edited to you liking, see how ID_VIEWER is set to obtain other container IDs, read man 5 sway for additional information, getting IDs works this way only with gedit and evince
+swayorder(){
+	sleep 1 # Pause is necessary for containers to open and to be found by jq, find a working value for your system 
+	ID_VIEWER=$(swaymsg -t get_tree | jq -r --arg VIEWER_JQ "${VIEWER}" '.. | (.nodes? // empty)[] | select( .app_id == $VIEWER_JQ ) | .id')
+	ID_EDITOR=$(swaymsg -t get_tree | jq -r --arg EDITOR_JQ "${EDITOR}" '.. | (.nodes? // empty)[] | select( .app_id == $EDITOR_JQ ) | .id')
+	swaymsg [con_id=${ID_VIEWER}] move right 
+	swaymsg [con_id=${ID_EDITOR}] move up
+	swaymsg [con_id=${ID_EDITOR}] move up
+}
+
+
+translate(){
+	${TERM} -e trans -tl ${TARGET_LANGUAGE} &
+}
+
+
+set_editor(){
+	export EDITOR_COMMAND=${OPTARG}
+	export EDITOR=${OPTARG}
+	if [[ ${OPTARG} == "vim" ]]; then
+		export EDITOR_COMMAND="${TERM} -e vim";
+	elif [[ ${OPTARG} == "nano" ]]; then
+		export EDITOR_COMMAND="${TERM} -e nano";
+	elif [[ ${OPTARG} == "vi" ]]; then
+		export EDITOR_COMMAND="${TERM} -e vi";
+	fi
+}
+
+
+set_syncvars(){
+	SYNC_BIBCOMPILE="-s"
+	SYNC_PDFLATEX="--synctex=1"
+}
+
+
+set_xvars(){
+	BIBTEX="true"
+	SWAY="true"
+	SYNCTEX="true"
+}
+
+
+edit_copy_in_new_dir(){
+	NAME=$(basename ${OPTARG})
+	FILE=${NAME%.*}
+	WORKDIR="${FILE}_${DATE}"
+	mkdir ./${WORKDIR}
+	cp ${OPTARG} ./${WORKDIR}/
+	cd ${WORKDIR}
+}
+
+
+edit_copy(){
+	cp ${OPTARG} ./
+	NAME=$(basename ${OPTARG})
+	FILE=${NAME%.*}
+}
+
+
+toggle_sway(){
+	case ${OPTARG} in
+		"1")
+			SWAY="true"
+			;;
+		"0")
+			SWAY="false"
+			;;
+	esac
+}
+
+
+toggle_bibtex(){
+	case ${OPTARG} in
+		"1")
+			BIBTEX="true"
+			;;
+		"0")
+			BIBTEX="false"
+			;;
+	esac
+}
+
+
+toggle_synctex(){
+	case ${OPTARG} in
+		"1")
+			SYNCTEX="true"
+			;;
+		"0")
+			SYNCTEX="false"
+			;;
+	esac
+}
+
+
+get_template(){
+	TEMPLATE=${TEMPLATE_DIRECTORY}$1
+	if [[ -f ${TEMPLATE} ]]; then
+		cp ${TEMPLATE} ./
+		NAME=$(basename $1)
+		FILE=${NAME%.*}
+	else
+		echo -e "\tThe template you specified does not exist! You must specify the template with .tex suffix."
+		exit 0
+	fi
+}
+
+
+filename_substitution(){
+		NAME=$(basename $1)
+		FILE_DIR=$(dirname $1)
+		FILE=${NAME%.*}
+}
+
+set_working_directory(){
+	if [[ ${FILE_DIR} != ${PWD} ]]; then
+	cd ${FILE_DIR}
+	fi
+}
+
+
+new_default(){
+	NAME=$1
+	FILE=${NAME%.*}
+	WORKDIR="${FILE}_${DATE}"
+	mkdir ./${WORKDIR}
+	cp ${DEFAULT_TEMPLATE} ./${WORKDIR}/${FILE}.tex
+	cd ${WORKDIR}
+}
+
+
+rename(){
+	mv ${FILE}.tex $1.tex
+	FILE=$1
+}
+
+
+redir(){
+	NAME=$1
+	WORKDIR="${NAME}_${DATE}"
+	mkdir ./${WORKDIR}
+	if [[ ${TEMPLATE} == "true" ]]; then mv ${FILE}.tex ./${WORKDIR}/${NAME}.tex; else cp ${FILE}.tex ./${WORKDIR}/${NAME}.tex; fi
+	
+	FILE=${NAME%.*}
+	cd ${WORKDIR}
+} 
+
+
+if [[ $1 != -* && ! -f $1 && -n $1 ]]; then 
+	new_default $1 
+elif [[ $1 != -* && -f $1 ]]; then
+	filename_substitution $1
+	set_working_directory	
+else
+	while getopts ":ho:s:c:C:b:v:e:f:t:T:x:n:N:" OPT
+	do
+	case ${OPT} in
+		b)
+			toggle_bibtex
+			;;
+		t)
+			TRANSLATE="true"
+			TARGET_LANGUAGE=${OPTARG}
+			;;
+		T)
+			get_template ${OPTARG}
+			TEMPLATE="true"
+			;;
+		c)	
+			edit_copy
+			;;
+		C)
+			edit_copy_in_new_dir
+			;;
+
+		f)
+			filename_substitution ${OPTARG}
+			set_working_directory
+			;;
+		o)
+			toggle_sway
+			;;
+		h)
+			usage
+			;;
+		s)
+			toggle_synctex
+			;;
+		v)
+			export VIEWER=${OPTARG}
+			;;
+		e)
+			set_editor
+			;;
+		x)
+			filename_substitution ${OPTARG}
+			set_xvars
+			;;
+		n)
+			NEWNAME=${OPTARG}
+			RENAME="true"
+			;;
+		N)
+			NEWNAME=${OPTARG}
+			REDIR="true"
+			;;
+		*)
+			usage
+			;;
+	esac
+	done
+fi
+
+## Run editor and viewer
+if [[ -z "${FILE+x}" ]]; then
+	usage
+elif [[ -z "${VIEWER+x}" ]]; then
+	usage
+elif [[ -z "${EDITOR_COMMAND+x}" ]]; then
+	usage
+else
+	if [[ ${SYNCTEX} == "true" && ${EDITOR} == "gedit" ]]; then
+        	SYNC_GEDIT="-s"
+		set_syncvars
+	elif [[ ${SYNCTEX} == "true" ]]; then
+		set_syncvars
+	fi	       
+	if [[ ${SWAY} == "true" ]]; then
+		swaymsg splitv
+	fi
+	if [[ ${RENAME} == "true" ]]; then
+		rename ${NEWNAME}
+	fi
+	if [[ ${REDIR} == "true" ]]; then
+		redir ${NEWNAME}
+	fi
+	startedit
+	if [[ ${SWAY} == "true" ]]; then
+		swayorder &
+	else 
+		true
+	fi
+	if [[ "${TRANSLATE}" == "true" ]]; then
+		translate &
+	fi
+	if [[ "${BIBTEX}" == "true" ]]; then
+		glartex_bib 
+	else
+		glartex_nobib
+	fi
+	echo -e "\v\tYou are using glartex version ${VERSION}\n\v\tsynctex:\t${SYNCTEX}\n\tbibtex: \t${BIBTEX}\n\tswaymode:\t${SWAY}"
+	if [[ "${TRANSLATE}" == "true" ]]; then echo -e "\tTranslation target language: ${TARGET_LANGUAGE}" 
+	fi
+fi
+
+			
 wait
+
+

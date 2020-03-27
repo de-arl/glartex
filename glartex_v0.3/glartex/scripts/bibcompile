@@ -1,0 +1,40 @@
+#!/bin/bash
+usage(){
+	echo -e "Usage: bibcompile [-s] -f FILE\n\t-f FILE\tname of texfile without suffix\n\t-s\tuse synctex\n\t-h\tdisplay this notice
+	"
+	1>&2
+	exit 1
+}
+
+compile(){
+pdflatex -halt-on-error $2 $1.tex 
+bibtex $1.aux 
+pdflatex -halt-on-error $2 $1.tex 
+pdflatex -halt-on-error $2 $1.tex 
+}
+
+while getopts :sf: OPT
+do
+	case ${OPT} in
+		s)
+			export SYNCTEX="--synctex=1"
+			;;
+		f)
+			export FILE=${OPTARG}
+			;;
+		h)
+			usage
+			;;
+		*)
+			usage
+			;;
+	esac
+done
+
+if [ -z ${FILE+x} ]; then
+	usage
+else
+	compile ${FILE} ${SYNCTEX}
+fi
+
+exit 0

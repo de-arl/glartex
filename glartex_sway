@@ -1,9 +1,0 @@
-#!/bin/bash
-pdflatex --synctex=1 --halt-on-error $1.tex 
-exec gedit -s $1.tex &
-echo $1.tex | entr -a -p -r pdflatex -halt-on-error --synctex=1 $1.tex & 
-exec evince $1.pdf &
-# Put containers in order, sleep is necessary to give containers time to open 
-sleep 1 
-exec glartex_sway_plugin&
-wait
