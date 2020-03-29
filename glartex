@@ -75,7 +75,11 @@ set_xvars(){
 edit_copy_in_new_dir(){
 	NAME=$(basename ${OPTARG})
 	FILE=${NAME%.*}
+	if [[ -n ${NEWNAME} ]]; then
+	WORKDIR="${NEWNAME}_${DATE}"
+	else
 	WORKDIR="${FILE}_${DATE}"
+	fi
 	mkdir ./${WORKDIR}
 	cp ${OPTARG} ./${WORKDIR}/
 	cd ${WORKDIR}
