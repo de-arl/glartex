@@ -1,0 +1,1 @@
+Zathura and vim or gvim support forward and backward search with synctex. To use this function run the install script or add the function manually to you .vimrc. By default forward search is bound to ctrl+l and to use backward search just ctrl-click somewhere in the pdf.

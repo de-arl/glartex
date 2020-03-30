@@ -1,16 +1,16 @@
 #!/bin/bash
-## Set defaults
+
+## If your config is not in ~/.config/glartex/config you must edit the script
 export EDITOR="gedit"
-export EDITOR_COMMAND="gedit" 	# Use e.g. "$TERM -e vim" for editors that run in terminal
 export VIEWER="evince"
-export BIBTEX="false"
+export BIBTEX="true"
 export SYNCTEX="true"
 export SWAY="false"
 
-## Glartex supports the use of templates
+## Glartex supports the use of templates, default template must be in TEMPLATE_DIRECTORY
 export TEMPLATE_DIRECTORY="${HOME}/.config/glartex/templates/"
 export DEFAULT_TEMPLATE="${HOME}/.config/glartex/templates/basic.tex"
 
-## If you have translation shell installed you can use the translate option
+## Invoke a translation shell
 export TRANSLATE="false"
 export TARGET_LANGUAGE="ENG"

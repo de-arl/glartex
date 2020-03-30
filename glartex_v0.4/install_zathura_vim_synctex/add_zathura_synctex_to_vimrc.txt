@@ -1,0 +1,6 @@
+function! Synctex_gla()
+    let g:gla_syncpdf = $SYNCPDF
+    execute " !zathura --synctex-forward " . line('.') . ":" . col('.') . ":" . bufname('%') . "  " . g:gla_syncpdf
+    redraw!
+endfunction
+map <C-l> :call Synctex_gla()<cr>

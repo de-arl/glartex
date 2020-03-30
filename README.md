@@ -15,9 +15,11 @@ Install entr (eradman.com/entrproject/)
 
 If you want to use the translate option install the translate shell (soimort.org/translate/shell/)
 
-Copy glartex_v0.3/glartex to ~/.config/glartex
+Copy glartex_v0.4 to ~/.config/glartex
 
-Put the glartex-executable somewhere in your PATH and make it executable
+Add ./config/glartex/scripts to your PATH or copy the executables into your PATH
+
+To get forward and backward search with vim or gvim and zathura run the install script in glartex/install_zathura_vim_synctex
 
 Edit the config file to your liking
 
@@ -65,9 +67,9 @@ IMPORTANT:
 
 	Glartex sources ~/.config/glartex/config
 	Templates are in ~/.config/glartex/templates
-	Synctex works best with gedit and evince
 	Depends on entr github.com/clibs/entr
 	Translate option depends on translate shell github.com/soimort/translate-shell
+    Synctex for sure works with gedit and evince as well as with vim and zathura, if you need another combination, please email me
 
 	To change -o behaviour edit function swayorder
 

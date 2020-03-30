@@ -5,7 +5,7 @@
 VERSION=0.3
 DATE=$(date +"%y-%m-%d")
 export SHELL=/bin/bash
-source ~/.config/glartex/config
+source ${HOME}/.config/glartex/config
 
 usage(){
 	echo -e "\v\t=== GLARTEX VERSION ${VERSION} ===\v\nUSAGE:\v\nglartex [options] <-f/-c/-C FILE>\v\n\t-e editor\tSet editor\n\t-v viewer\tSet viewer\n\t-b 0/1\tSet bibtex false/true\n\t-s 0/1\tSet synctex false/true\n\t-o 0/1\tSet swaymode false/true\n\t-x\tSame as -b 1 -s 1 -o 1\n\t-t TL\tInclude translate shell with target language TL\n\t-n NAME\tRename output\n\t-N NAME\tRename output and redirect to ./NAME_yy-mm-dd\v\n\t---Options override defaults from configfile---\v\n\t-f FILE\tEdit any file\n\t-c FILE\tEdit copy of file in working directory\n\t-C FILE\tEdit copy of file in new directory ./FILE_yy-mm-dd\v\n\t-h\tHelp\v\v\nglartex -T TEMPLATE\v\n\tEdit template in working directory\n\v\tTo edit template in new directory use \$glartex -C path/to/template\v\v\nglartex FILENAME\v\n\tIf file exists:\n\tSame as -f FILENAME\n\v\tIf file doesn't exist:\n\tEdit a copy of DEFAULT_TEMPLATE named FILENAME in new directory ./FILENAME_yy-mm-dd\v\v\nIMPORTANT:\n\v\tGlartex sources ~/.config/glartex/config\n\tTemplates are in ~/.config/glartex/templates\n\tSynctex works best with gedit and evince\n\tDepends on entr github.com/clibs/entr\n\tTranslate option depends on translate shell github.com/soimort/translate-shell\v\n\tTo change -o behaviour edit function swayorder\v\v\nAUTHOR:\v\n\tde-arl, suspu@protonmail.com\v"
@@ -15,9 +15,12 @@ usage(){
 
 
 startedit(){
+    export ${FILE}
 	pdflatex --synctex=1 --halt-on-error ${FILE}.tex 
-	exec ${EDITOR_COMMAND} ${SYNC_GEDIT} ${FILE}.tex &
-	exec ${VIEWER} ${FILE}.pdf &
+	exec env SYNCPDF=${FILE}.pdf ${EDITOR_COMMAND} ${SYNC_GEDIT} ${FILE}.tex &
+    export PID_EDITOR=$!
+	exec ${VIEWER_COMMAND} ${FILE}.pdf &
+    export PID_VIEWER=$!
 }
 
 
@@ -33,8 +36,8 @@ glartex_bib(){
 # This function may easily be edited to you liking, see how ID_VIEWER is set to obtain other container IDs, read man 5 sway for additional information, getting IDs works this way only with gedit and evince
 swayorder(){
 	sleep 1 # Pause is necessary for containers to open and to be found by jq, find a working value for your system 
-	ID_VIEWER=$(swaymsg -t get_tree | jq -r --arg VIEWER_JQ "${VIEWER}" '.. | (.nodes? // empty)[] | select( .app_id == $VIEWER_JQ ) | .id')
-	ID_EDITOR=$(swaymsg -t get_tree | jq -r --arg EDITOR_JQ "${EDITOR}" '.. | (.nodes? // empty)[] | select( .app_id == $EDITOR_JQ ) | .id')
+	ID_VIEWER=$(swaymsg -t get_tree | jq -r --argjson PID "$PID_VIEWER" '.. | (.nodes? // empty)[] | select(.pid==$PID) | .id')
+	ID_EDITOR=$(swaymsg -t get_tree | jq -r --argjson PID "$PID_EDITOR" '.. | (.nodes? // empty)[] | select( .pid == $PID ) | .id')
 	swaymsg [con_id=${ID_VIEWER}] move right 
 	swaymsg [con_id=${ID_EDITOR}] move up
 	swaymsg [con_id=${ID_EDITOR}] move up
@@ -46,15 +49,26 @@ translate(){
 }
 
 
-set_editor(){
-	export EDITOR_COMMAND=${OPTARG}
-	export EDITOR=${OPTARG}
-	if [[ ${OPTARG} == "vim" ]]; then
-		export EDITOR_COMMAND="${TERM} -e vim";
-	elif [[ ${OPTARG} == "nano" ]]; then
+set_viewer_command(){
+	if [[ $1 == "zathura" ]]; then
+        export VIEWER_COMMAND="zathura_synctex_plugin"
+    else
+	    export VIEWER_COMMAND=${VIEWER}
+	fi
+}
+
+
+set_editor_command(){
+	if [[ $1 == "vim" ]]; then
+		export EDITOR_COMMAND="${TERM} -e vim --servername glavim";
+	elif [[ $1 == "gvim" ]]; then
+		export EDITOR_COMMAND="${TERM} -e gvim --servername glavim";
+	elif [[ $1 == "nano" ]]; then
 		export EDITOR_COMMAND="${TERM} -e nano";
-	elif [[ ${OPTARG} == "vi" ]]; then
+	elif [[ $1 == "vi" ]]; then
 		export EDITOR_COMMAND="${TERM} -e vi";
+    else
+	    export EDITOR_COMMAND=${EDITOR}
 	fi
 }
 
@@ -174,6 +188,10 @@ rename(){
 redir(){
 	NAME=$1
 	WORKDIR="${NAME}_${DATE}"
+    if [[ -d ./${WORKDIR} ]]; then
+            read -r -p "Folder ./${WORKDIR} exists, please enter new folder name: " STR
+            WORKDIR=${STR}
+    fi
 	mkdir ./${WORKDIR}
 	if [[ ${TEMPLATE} == "true" ]]; then mv ${FILE}.tex ./${WORKDIR}/${NAME}.tex; else cp ${FILE}.tex ./${WORKDIR}/${NAME}.tex; fi
 	
@@ -223,10 +241,10 @@ else
 			toggle_synctex
 			;;
 		v)
-			export VIEWER=${OPTARG}
+            VIEWER=${OPTARG}
 			;;
 		e)
-			set_editor
+			EDITOR=${OPTARG}
 			;;
 		x)
 			filename_substitution ${OPTARG}
@@ -248,6 +266,8 @@ else
 fi
 
 ## Run editor and viewer
+set_editor_command "${EDITOR}"
+set_viewer_command "${VIEWER}"
 if [[ -z "${FILE+x}" ]]; then
 	usage
 elif [[ -z "${VIEWER+x}" ]]; then
@@ -265,14 +285,14 @@ else
 		swaymsg splitv
 	fi
 	if [[ ${RENAME} == "true" ]]; then
-		rename ${NEWNAME}
+		rename "${NEWNAME}"
 	fi
 	if [[ ${REDIR} == "true" ]]; then
-		redir ${NEWNAME}
+		redir "${NEWNAME}"
 	fi
 	startedit
 	if [[ ${SWAY} == "true" ]]; then
-		swayorder &
+	     swayorder &
 	else 
 		true
 	fi
@@ -285,6 +305,7 @@ else
 		glartex_nobib
 	fi
 	echo -e "\v\tYou are using glartex version ${VERSION}\n\v\tsynctex:\t${SYNCTEX}\n\tbibtex: \t${BIBTEX}\n\tswaymode:\t${SWAY}"
+    echo "pid of viewer: ${PID_VIEWER}; pid of editor ${PID_EDITOR}"
 	if [[ "${TRANSLATE}" == "true" ]]; then echo -e "\tTranslation target language: ${TARGET_LANGUAGE}" 
 	fi
 fi
