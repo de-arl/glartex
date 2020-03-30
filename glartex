@@ -148,7 +148,9 @@ get_template(){
 	if [[ -f ${TEMPLATE} ]]; then
 		cp ${TEMPLATE} ./
 		NAME=$(basename $1)
-		FILE=${NAME%.*}
+    	FILE=${NAME%.*}
+et_editor_command "${EDITOR}"
+set_viewer_command "${VIEWER}"FILE=${NAME%.*}
 	else
 		echo -e "\tThe template you specified does not exist! You must specify the template with .tex suffix."
 		exit 0
@@ -201,7 +203,14 @@ redir(){
 
 
 if [[ $1 != -* && ! -f $1 && -n $1 ]]; then 
-	new_default $1 
+	if [[ -f $1  || -f "$1.tex" ]]; then
+        NAME=$(basename $1)
+    	FILE=${NAME%.*}
+    else    
+    set_editor_command "${EDITOR}"
+    set_viewer_command "${VIEWER}"
+    new_default $1 
+    fi
 elif [[ $1 != -* && -f $1 ]]; then
 	filename_substitution $1
 	set_working_directory	
@@ -305,7 +314,6 @@ else
 		glartex_nobib
 	fi
 	echo -e "\v\tYou are using glartex version ${VERSION}\n\v\tsynctex:\t${SYNCTEX}\n\tbibtex: \t${BIBTEX}\n\tswaymode:\t${SWAY}"
-    echo "pid of viewer: ${PID_VIEWER}; pid of editor ${PID_EDITOR}"
 	if [[ "${TRANSLATE}" == "true" ]]; then echo -e "\tTranslation target language: ${TARGET_LANGUAGE}" 
 	fi
 fi
