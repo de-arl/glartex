@@ -1,4 +1,4 @@
-=== GLARTEX VERSION 0.3 ===
+=== GLARTEX VERSION 0.4 ===
 
 Glartex is a commandline utility to edit latex-Documents with your favorite editor and your favorite pdf-viewer.
  
