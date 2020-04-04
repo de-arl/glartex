@@ -2,7 +2,7 @@
 
 
 ####  ab hier
-VERSION="0.4"
+VERSION=0.3
 DATE=$(date +"%y-%m-%d")
 export SHELL=/bin/bash
 source ${HOME}/.config/glartex/config
@@ -35,7 +35,7 @@ glartex_bib(){
 
 # This function may easily be edited to you liking, see how ID_VIEWER is set to obtain other container IDs, read man 5 sway for additional information, getting IDs works this way only with gedit and evince
 swayorder(){
-	sleep 1 # Pause is necessary for containers to open and to be found by jq, find a working value for your system 
+	sleep 2 # Pause is necessary for containers to open and to be found by jq, find a working value for your system 
 	ID_VIEWER=$(swaymsg -t get_tree | jq -r --argjson PID "$PID_VIEWER" '.. | (.nodes? // empty)[] | select(.pid==$PID) | .id')
 	ID_EDITOR=$(swaymsg -t get_tree | jq -r --argjson PID "$PID_EDITOR" '.. | (.nodes? // empty)[] | select( .pid == $PID ) | .id')
 	swaymsg [con_id=${ID_VIEWER}] move right 
@@ -152,7 +152,8 @@ get_template(){
 et_editor_command "${EDITOR}"
 set_viewer_command "${VIEWER}"FILE=${NAME%.*}
 	else
-		echo -e "\tThe template you specified does not exist! You must specify the template with .tex suffix."
+		echo -e "\tThe template you specified does not exist! You must specify the template with .tex suffix.\n\tAvailable templates in ${TEMPLATE_DIRECTORY}:"
+        echo -e "\t"$(ls ${TEMPLATE_DIRECTORY} | grep .tex)
 		exit 0
 	fi
 }
